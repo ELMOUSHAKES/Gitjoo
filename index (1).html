@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حضور وغياب بالـ QR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2733;--mute:#5d6b7a;--line:#d8dee5;--main:#1f5fa8;--ok:#177a45;--okbg:#e2f3e9;--bad:#b3261e;--badbg:#fbe6e4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a21;--card:#1e2731;--ink:#e6ebf0;--mute:#9aa7b4;--line:#33404d;--main:#5a9be0;--ok:#5fd394;--okbg:#173a28;--bad:#ff8a80;--badbg:#412220}}
+:root[data-theme="dark"]{--bg:#141a21;--card:#1e2731;--ink:#e6ebf0;--mute:#9aa7b4;--line:#33404d;--main:#5a9be0;--ok:#5fd394;--okbg:#173a28;--bad:#ff8a80;--badbg:#412220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Tahoma,sans-serif;line-height:1.6}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.tabs{display:flex;max-width:900px;margin:auto}
+.tabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:inherit;font-weight:700;padding:12px 4px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--main);border-color:var(--main)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--main);outline-offset:2px}
+main{max-width:900px;margin:auto;padding:16px 12px 40px}
+section{display:none}section.on{display:block}
+h1{font-size:1.3rem;margin:0 0 12px}h2{font-size:1.05rem;margin:20px 0 8px}
+.stats{display:flex;gap:10px}.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.stat b{display:block;font-size:1.9rem;line-height:1.2}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line)}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--mute);font-weight:700}
+input,select,textarea,button.b{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+button.b,a.b{background:var(--main);color:#fff;border:0;cursor:pointer;text-decoration:none;display:inline-block;padding:9px 14px;border-radius:6px;font:inherit}
+button.d{background:var(--bad);color:#fff}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:14px}
+#reader{max-width:400px;margin:12px auto}
+#res{max-width:400px;margin:12px auto;padding:12px;border-radius:8px;font-weight:700;display:none}
+#res.ok{display:block;background:var(--okbg);color:var(--ok)}#res.bad{display:block;background:var(--badbg);color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.card{background:#fff;color:#111;border:1px dashed #778;padding:12px;text-align:center;break-inside:avoid}
+.card .q{display:flex;justify-content:center;margin-bottom:6px}
+.note{color:var(--mute);font-size:.9rem}
+#warn{display:none;background:var(--badbg);color:var(--bad);padding:8px 12px;text-align:center}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;display:none;z-index:9}
+#login{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;align-items:center;justify-content:center;padding:16px}.lbox{width:100%;max-width:340px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px}#login form{display:block;margin:0}#login input{width:100%;margin-bottom:8px}.lbox p{margin:8px 0 0;text-align:center}
+@media print{header,.np,#toast,#warn{display:none!important}body{background:#fff}section:not(.on){display:none}}
+</style>
+</head>
+<body>
+<header><nav class="tabs" role="tablist">
+<button data-t="today" role="tab">اليوم</button><button data-t="scan" role="tab">مسح الكود</button>
+<button data-t="students" role="tab">الطلاب</button><button data-t="cards" role="tab">الكروت</button><button data-t="out" role="tab">خروج</button>
+</nav></header>
+<div id="login" class="np"><div class="lbox"><form id="lf"><h1>تسجيل الدخول</h1><input id="em" type="email" placeholder="البريد الإلكتروني" dir="ltr" required autocomplete="username"><input id="pw" type="password" placeholder="كلمة السر" dir="ltr" required autocomplete="current-password"><button class="b" style="width:100%">دخول</button></form><p id="lmsg" class="bad" role="alert"></p></div></div>
+<main>
+<section id="today"></section>
+
+<section id="scan">
+<h1>مسح كود الطالب</h1>
+<div class="np"><button class="b" id="cam">تشغيل الكاميرا</button> <button class="b" id="camstop" style="display:none">إيقاف</button></div>
+<div id="reader"></div><div id="res" role="status"></div>
+<h2>تسجيل يدوي</h2>
+<form id="manual" style="grid-template-columns:1fr auto"><select id="msel" aria-label="اختر الطالب"></select><button class="b">سجّل الحضور</button></form>
+<p class="note">لو الكاميرا مش بتفتح، اسمح للمتصفح باستخدامها أو استخدم التسجيل اليدوي.</p>
+</section>
+
+<section id="students">
+<h1>الطلاب</h1>
+<form id="add">
+<input id="n" placeholder="اسم الطالب" required>
+<input id="p" placeholder="رقم الطالب" dir="ltr" inputmode="tel">
+<input id="pp" placeholder="رقم ولي الأمر" dir="ltr" inputmode="tel" required>
+<button class="b">إضافة الطالب</button>
+</form>
+<div class="wrap" id="slist"></div>
+</section>
+
+<section id="cards">
+<h1 class="np">كروت الطلاب</h1>
+<p class="np"><button class="b" onclick="window.print()">طباعة</button></p>
+<div class="cards" id="clist"></div>
+</section>
+</main>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script>
+const C = window.APP_CONFIG || {};
+let S = { students: [], att: {} };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const day = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+const clock = () => new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo' });
+function toast(t) { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.display = 'none', 2500); }
+function wa(p, t) {
+  p = (p || '').replace(/\D/g, '');
+  if (p.startsWith('00')) p = p.slice(2); else if (p.startsWith('0')) p = '20' + p.slice(1);
+  return 'https://wa.me/' + p + '?text=' + encodeURIComponent(t);
+}
+
+function renderToday() {
+  const d = day(), a = S.att[d] || {};
+  const pres = S.students.filter(s => a[s.id]).sort((x, y) => a[x.id].localeCompare(a[y.id]));
+  const abs = S.students.filter(s => !a[s.id]);
+  $('today').innerHTML = `<h1>حضور اليوم ${d}</h1>
+  <div class="stats"><div class="stat"><b class="ok">${pres.length}</b>حاضر</div><div class="stat"><b class="bad">${abs.length}</b>غائب</div></div>
+  <h2>الغائبون</h2>` + (abs.length ? `<div class="wrap"><table><tr><th>الاسم</th><th>رقم ولي الأمر</th><th></th></tr>` +
+    abs.map(s => `<tr><td>${esc(s.name)}</td><td dir="ltr">${esc(s.parent)}</td><td><a class="b" target="_blank" rel="noopener" href="${wa(s.parent, 'السلام عليكم، نفيدكم بأن الطالب/ة ' + s.name + ' غائب/ة اليوم ' + d + '.')}">أبلغ ولي الأمر</a></td></tr>`).join('') + `</table></div>`
+    : `<p class="note">${S.students.length ? 'لا يوجد غائبون.' : 'ابدأ بإضافة الطلاب من تبويب الطلاب.'}</p>`) +
+    `<h2>الحاضرون</h2>` + (pres.length ? `<div class="wrap"><table><tr><th>الاسم</th><th>الوقت</th></tr>` +
+    pres.map(s => `<tr><td>${esc(s.name)}</td><td dir="ltr">${a[s.id]}</td></tr>`).join('') + `</table></div>` : `<p class="note">لم يُسجَّل حضور بعد.</p>`);
+}
+
+function renderStudents() {
+  $('slist').innerHTML = S.students.length ? `<table><tr><th>الكود</th><th>الاسم</th><th>رقم الطالب</th><th>رقم ولي الأمر</th><th></th></tr>` +
+    S.students.map(s => `<tr><td dir="ltr">STU-${s.id}</td><td>${esc(s.name)}</td><td dir="ltr">${esc(s.phone)}</td><td dir="ltr">${esc(s.parent)}</td>
+    <td><button class="b d" data-del="${s.id}">حذف</button></td></tr>`).join('') + `</table>` : `<p class="note">لا يوجد طلاب بعد.</p>`;
+  $('msel').innerHTML = S.students.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+
+function renderCards() {
+  const box = $('clist'); box.innerHTML = '';
+  S.students.forEach(s => {
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = '<div class="q"></div><b></b><div dir="ltr" style="font-size:.85rem"></div>';
+    c.querySelector('b').textContent = s.name; c.lastChild.textContent = 'STU-' + s.id;
+    box.append(c);
+    new QRCode(c.querySelector('.q'), { text: 'STU-' + s.id, width: 140, height: 140, correctLevel: QRCode.CorrectLevel.M });
+  });
+  if (!S.students.length) box.innerHTML = '<p class="note np">أضف طلابًا أولًا.</p>';
+}
+
+function showRes(r) {
+  const b = $('res'); b.className = r.ok ? 'ok' : 'bad'; b.textContent = r.msg;
+  if (r.wa) { const a = document.createElement('a'); a.href = r.wa; a.target = '_blank'; a.rel = 'noopener'; a.textContent = ' — إبلاغ ولي الأمر'; a.style.color = 'inherit'; b.append(a); }
+}
+
+
+const ready = C.url && C.key && typeof supabase !== 'undefined';
+const sb = ready ? supabase.createClient(C.url, C.key) : null;
+
+async function loadAll() {
+  const d = day();
+  const [s, a] = await Promise.all([
+    sb.from('students').select('*').order('id'),
+    sb.from('attendance').select('student_id,time').eq('day', d)
+  ]);
+  if (s.error || a.error) throw (s.error || a.error);
+  S.students = s.data.map(x => ({ id: x.id, name: x.name, phone: x.phone, parent: x.parent_phone }));
+  S.att = { [d]: {} };
+  a.data.forEach(r => S.att[d][r.student_id] = r.time);
+}
+
+async function mark(id) {
+  let s = S.students.find(x => x.id === id);
+  if (!s) { try { await loadAll(); } catch (e) {} s = S.students.find(x => x.id === id); }
+  if (!s) return { ok: false, msg: 'الطالب غير موجود' };
+  const d = day(), t = clock();
+  const { error } = await sb.from('attendance').insert({ student_id: id, day: d, time: t });
+  if (error) return { ok: false, msg: error.code === '23505' ? s.name + ' مسجَّل حضوره اليوم بالفعل' : 'تعذر التسجيل: ' + error.message };
+  (S.att[d] = S.att[d] || {})[id] = t;
+  return { ok: true, msg: 'تم تسجيل حضور ' + s.name, wa: wa(s.parent, 'السلام عليكم، نفيدكم بحضور الطالب/ة ' + s.name + ' اليوم الساعة ' + t.slice(0, 5) + '.') };
+}
+
+let qr = null, busy = false;
+async function stopCam() { if (qr) { try { await qr.stop(); } catch (e) {} qr = null; } $('cam').style.display = ''; $('camstop').style.display = 'none'; }
+$('cam').onclick = async () => {
+  if (typeof Html5Qrcode === 'undefined') return showRes({ ok: false, msg: 'تعذر تحميل قارئ الكود، تأكد من الإنترنت' });
+  qr = new Html5Qrcode('reader');
+  try {
+    await qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, async txt => {
+      if (busy) return; busy = true; setTimeout(() => busy = false, 2500);
+      const m = /^STU-(\d+)$/.exec(txt.trim());
+      showRes(m ? await mark(+m[1]) : { ok: false, msg: 'كود غير صالح' });
+    });
+    $('cam').style.display = 'none'; $('camstop').style.display = '';
+  } catch (e) { qr = null; showRes({ ok: false, msg: 'تعذر فتح الكاميرا. اسمح بالوصول للكاميرا من إعدادات المتصفح.' }); }
+};
+$('camstop').onclick = stopCam;
+$('manual').onsubmit = async e => { e.preventDefault(); if ($('msel').value) showRes(await mark(+$('msel').value)); };
+
+$('add').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  const { error } = await sb.from('students').insert({ name: $('n').value.trim(), phone: $('p').value.trim(), parent_phone: $('pp').value.trim() });
+  if (error) return toast('تعذر إضافة الطالب: ' + error.message);
+  f.reset();
+  try { await loadAll(); } catch (x) {}
+  renderStudents(); toast('تمت إضافة الطالب');
+};
+$('slist').onclick = async e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  if (b.dataset.arm) {
+    const { error } = await sb.from('students').delete().eq('id', +b.dataset.del);
+    if (error) return toast('تعذر الحذف');
+    try { await loadAll(); } catch (x) {}
+    return renderStudents();
+  }
+  b.dataset.arm = 1; b.textContent = 'تأكيد الحذف؟';
+  setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = 'حذف'; } }, 3000);
+};
+
+const views = { today: renderToday, students: renderStudents, cards: renderCards, scan: renderStudents };
+async function show(t) {
+  if (t === 'out') { await stopCam(); await sb.auth.signOut(); $('login').style.display = 'flex'; return; }
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === t));
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.t === t));
+  if (t !== 'scan') stopCam();
+  try { await loadAll(); } catch (e) { toast('تعذر تحميل البيانات: ' + (e.message || '')); }
+  views[t]();
+}
+document.querySelector('.tabs').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
+
+$('lf').onsubmit = async e => {
+  e.preventDefault();
+  const { error } = await sb.auth.signInWithPassword({ email: $('em').value.trim(), password: $('pw').value });
+  if (error) { $('lmsg').textContent = 'تعذر الدخول: ' + (error.message || error.code || 'خطأ غير معروف'); return; }
+  $('lmsg').textContent = ''; $('pw').value = ''; $('login').style.display = 'none'; show('today');
+};
+
+(async () => {
+  $('login').style.display = 'flex';
+  if (!sb) { $('lf').style.display = 'none'; $('lmsg').textContent = 'لم يتم ضبط قاعدة البيانات. راجع ملف config.js'; return; }
+  const { data } = await sb.auth.getSession();
+  if (data.session) { $('login').style.display = 'none'; show('today'); }
+})();
+</script>
+</body>
+</html>
